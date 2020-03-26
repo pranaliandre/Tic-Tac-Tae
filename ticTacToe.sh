@@ -7,4 +7,13 @@ declare boardGame
 function resetBoard(){
 	boardGame=(- - - - - - - - -)
 }
+function assignLetterToPlayer(){
+	if [ $((RANDOM%2)) -eq 1 ]
+	then
+		player=X
+	else
+		player=0
+	fi
+}
 resetBoard
+assignLetterToPlayer
