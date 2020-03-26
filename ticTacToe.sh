@@ -8,11 +8,13 @@ function resetBoard(){
 	boardGame=(- - - - - - - - -)
 }
 function assignLetterToPlayer(){
-	if [ $((RANDOM%2)) -eq 1 ]
+	if [ $((RANDOM%2)) -eq 0 ]
 	then
 		player=X
+		playerTurn=ture
 	else
 		player=0
+		playerTurn=true
 	fi
 }
 resetBoard
