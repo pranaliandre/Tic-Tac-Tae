@@ -68,6 +68,7 @@ function computerTurn(){
 	[ ${FUNCNAME[1]} == switchPlayer ] && echo " Computer Turn Sign $computer"
 	#$?-The exit status of the last command executed.
 	[ $? == 0 ] && checkWinningCells $player
+	[ &? == 0 ] && takeCornerPosition
 	[ $? == 0 ] && isCellEmpty $((RANDOM % 9)) $computer
 	printBoard
 }
@@ -124,6 +125,17 @@ function checkForComputer(){
 			return 1
 		else
 			eval $(echo win1=$win2\;win2=$win3\;win3=$win1)
+		fi
+	done
+}
+#function of take corner position
+function takeCornerPosition(){
+	for (( i=0;i<9;i+=2 ))
+	do
+			if [[ ${gameBoard[$i]} == *[[:digit:]]* && $i != 4 ]]; then
+			gameBoard[$i]=$computer
+			((playerMoves++))
+			return 1
 		fi
 	done
 }
