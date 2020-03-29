@@ -1,152 +1,144 @@
 #!/bin/bash -x
-echo "Welcome to tic tac toe game"
-#constMants
+
+echo "Welcome To Tic Tac Toe"
+
+#constants
 TOTAL_MOVES=9
 
 #variables
 playerMoves=0
-playerTurn=0
-#declare the gameboard
-declare -a boardGame
 
-#function of resetting the board
+#array for game board
+declare -a gameBoard
+
+#Restting game board
 function resetBoard(){
-	boardGame=(1 2 3 4 5 6 7 8 9)
+	gameBoard=(1 2 3 4 5 6 7 8 9)
 	printBoard
 }
-#function of printing the board
+
+#Displaying board
 function printBoard(){
-	echo "---------"
-	for (( i=0;i<7;i+=3 ))
+	echo "-------------"
+	for((i=0;i<7;i+=3))
 	do
-		echo "| ${boardGame[$i]} | ${boardGame[$((i+1))]} | ${boardGame[$((i+2))]} |"
-		echo "---------"
+		echo "| ${gameBoard[$i]} | ${gameBoard[$((i+1))]} | ${gameBoard[$((i+2))]} |"
+		echo "-------------"
 	done
 }
-#function for assign letter to player
+
+#Assiging letter X or O to player and decide who play first
 function assignLetterToPlayer(){
-	if [ $(( RANDOM % 2 )) -eq 0 ]
-	then
-		computer=x
-		player=0
+	if [ $(( RANDOM % 2 )) -eq 0 ]; then
+		computer=X
+		player=O
 	else
-		player=x
-		computer=0
+		player=X
+		computer=O
 	fi
-	if [ $player == x ]
-	then
-		echo "Player play first with x sign"
+	[ $player == X ] && echo "Player play first with X sign" || echo "Computer play first with X sign"
+	[ $player == X ] && playerTurn || computerTurn
+}
+
+#Switching players
+function switchPlayer(){
+	#Checking condition using Ternary operators
+	[ $currentPlayer == 1 ] && computerTurn || playerTurn
+}
+
+#Function for user play
+function playerTurn(){
+	currentPlayer=1
+	#FUNCNAME is an array containing all the names of the functions in the call stack
+	[ ${FUNCNAME[1]} == switchPlayer ] && echo "Player Turn Sign : $player"
+	read -p "Enter Position Between 1 to 9 : " position
+	if [[ $position -ge 1 && $position -le 9 && $position != ' ' ]]; then
+		isCellEmpty $position $player
+		checkWinningCells
 	else
-		echo "Computer play first with x sign"
-	fi
-	if [ $player == x ]
-	then
+		echo "Please enter value"
 		playerTurn
-	else
-		computerTurn
 	fi
 }
 
-#function switch player to another player
-function switchPlayer(){
-	if [ $playerTurn == 1 ]
-	then
-		computerTurn
-	else
-		playerTurn
-	fi
-}
-#function for user play
-function playerTurn(){
-	#function name is array containing all  the names of the functions in call stack
-	playerTurn=1
-	[ ${FUNCNAME[1]} == switchPlayer ] &&  echo "Player Turn sign $player"
-	read -p "Enter position between 1 to 9 : " position	
-	if [[ $position -ge 1 && $position -le 9 ]]
-	then
-		emptyCell $position $player
-		winnerCheckCells
-	else
-		echo "please enter value"
-		playerTurn
-	fi
-}
 #Function for computer play
 function computerTurn(){
-	[ $FUNCNAME[1]} == switchPlayer ] && echo "Computer Turn sign $computer "
-	playerTurn=0
-	flag=0
-	winnerCheckCells $computer
-	[ $flag == 0 ] && emptyCell $((RANDOM%9)) $computer
+	currentPlayer=0
+	checkWinningCells $computer
+	[ ${FUNCNAME[1]} == switchPlayer ] && echo " Computer Turn Sign $computer"
+	#$?-The exit status of the last command executed.
+	[ $? == 0 ] && checkWinningCells $player
+	[ $? == 0 ] && isCellEmpty $((RANDOM % 9)) $computer
+	printBoard
 }
 
-#function for checking is already filled or empty
-function  emptyCell(){
+#checking position is already filled or blank
+function isCellEmpty() {
 	local position=$1-1
 	local sign=$2
-	if (( ${boardGame[position]}!=x && ${boardGame[position]}!=0)) 
+	if((${gameBoard[position]}!=X && ${gameBoard[position]}!=O))
 	then
-		boardGame[$position]=$sign
+		gameBoard[$position]=$sign
 		((playerMoves++))
 	else
-		[ ${FUNCNAME[1]} == "playerTurn" ] && echo "Position is occupied"
+		[ ${FUNCNAME[1]} == "playerTurn" ] && echo "Position is Occupied"
 		${FUNCNAME[1]}
 	fi
 }
-#function for checking diagonal, row and column
-function winnerCheckCells(){
+
+#Checking column, rows and diagonals
+function checkWinningCells(){
 	[ ${FUNCNAME[1]} == "playerTurn" ] && call=checkWinner || call=checkForComputer; sign=$1;
-	column=0
-	for ((row=0;row<7;row+=3))
+	col=0
+	for((row=0;row<7;row+=3))
 	do
-		[ $flag == 0 ] && $call $row $((row+1)) $((row+2))
-		[ $flag == 0 ] && $call $column $((column+3)) $((column+6))
-		(( column++ ))
+		[ $?==0 ] && $call $row $((row+1)) $((row+2)) || return 1
+		[ $?==0 ] && $call $col $((col+3)) $((col+6)) || return 1
+		((col++))
 	done
-		[ $flag == 0 ] && $call 0 4 8
-		[ $flag == 0 ] && $call 2 4 6
+	[ $?==0 ] && $call 0 4 8 || return 1
+	[ $? == 0 ] && $call 2 4 6 || return 1
 }
 
-#function of check winner or not
+#Checking winner
 function checkWinner(){
 	local win1=$1 win2=$2 win3=$3
-	if [ ${boardGame[$win1]} == ${boardGame[$win2]} ] && [ ${boardGame[$win2]} == ${boardGame[$win3]} ]
-	then
-		[ ${boardGame[$win1]} == $player ] &&  winner=player || winner=computer
-		echo "Winner win and have sign ${boardGame[$win1]}"
+	if [ ${gameBoard[$win1]} == ${gameBoard[$win2]} ] && [ ${gameBoard[$win2]} == ${gameBoard[$win3]} ]; then
+		[ ${gameBoard[$win1]} == $player ] && winner=player || winner=computer
 		printBoard
+		echo "$winner Win and Have Sign ${gameBoard[$cell1]}"
 		exit
 	fi
 }
-#function of Checking if computer can win then place on win Position
+
+#Computer tring to win
 function checkForComputer(){
-		local win1=$1 win2=$2 win3=$3
-		for ((i=0;i<3;i++))
-		do
-			if [ ${boardGame[$win1]} == ${boardGame[$win2]} ] && [ ${boardGame[$win1]} == $sign ] && [[ ${boardGame[$win3]} == *[[:digit:]]* ]]
-			then
-				boardGame[$win3]=$computer
-				checkWinner $win1 $win2 $win3
-				flag=1
-				((playerMoves++))
-				break
-			else
-				eval $(echo win1=$win2\;win2=$win3\;win3=$win1)
-			fi 
-		done
+	local win1=$1 win2=$2 win3=$3
+	for((i=0;i<3;i++))
+	do
+		if [ ${gameBoard[$win1]} == ${gameBoard[$win2]} ] && [ ${gameBoard[$win1]} == $sign ] && [[ ${gameBoard[$win3]} == *[[:digit:]]* ]] 
+		then
+			gameBoard[$win3]=$computer
+			checkWinner $win1 $win2 $win3
+			((playerMoves++))
+			return 1
+		else
+			eval $(echo win1=$win2\;win2=$win3\;win3=$win1)
+		fi
+	done
 }
 
-# function for played a game till not reached end
+#Running game untill game ends
 function playTillGameEnd(){
-   resetBoard
-   assignLetterToPlayer
-   while [ $playerMoves -lt $TOTAL_MOVES ]
-   do
-      printBoard
-      switchPlayer
-   done
-   printBoard
-   echo "Game Tie"
+	resetBoard
+	assignLetterToPlayer
+	while [ $playerMoves -lt $TOTAL_MOVES ]
+	do
+		switchPlayer
+	done
+	printBoard
+	echo "Game Tie"
 }
-#Starting game
+
+#starting game
 playTillGameEnd
