@@ -68,7 +68,8 @@ function computerTurn(){
 	[ ${FUNCNAME[1]} == switchPlayer ] && echo " Computer Turn Sign $computer"
 	#$?-The exit status of the last command executed.
 	[ $? == 0 ] && checkWinningCells $player
-	[ $? == 0 ] && takeCornerCenterPosition
+	[ $? == 0 ] && takeProperPosition 0
+	[ $? == 0 ] && takeProperPosition 1
 	[ $? == 0 ] && isCellEmpty $((RANDOM % 9)) $computer
 	printBoard
 }
@@ -128,11 +129,13 @@ function checkForComputer(){
 		fi
 	done
 }
-#function of take corner or center position
-function takeCornerCenterPosition(){
-	for (( i=0;i<9;i+=2 ))
+#function of take proper position
+function takeProperPosition()
+{
+	local startValue=$1
+	for(( i=startValue;i<9;i+=2))
 	do
-			if [[ ${gameBoard[$i]} == *[[:digit:]]* && $i != 4 ]]; then
+		if [[ ${gameBoard[$i]} == *[[:digit:]]* && $i != 4 ]]; then
 			gameBoard[$i]=$computer
 			((playerMoves++))
 			return 1
@@ -143,8 +146,7 @@ function takeCornerCenterPosition(){
 		((playerMoves++))
 		return 1
 	fi
-}
-
+} 
 #Running game untill game ends
 function playTillGameEnd(){
 	resetBoard
