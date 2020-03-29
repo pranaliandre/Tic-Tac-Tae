@@ -65,28 +65,19 @@ function playerTurn(){
 	if [[ $position -ge 1 && $position -le 9 ]]
 	then
 		emptyCell $position $player
+		winnerCheckCells
 	else
 		echo "please enter value"
-		playerTurn	
+		playerTurn
 	fi
 }
 #Function for computer play
 function computerTurn(){
 	[ $FUNCNAME[1]} == switchPlayer ] && echo "Computer Turn sign $computer "
 	playerTurn=0
-	position=$((RANDOM % 9))
-	emptyCell $position $computer
-}
-#function of player play the game enter position for playing game
-function playUser(){
-	read -p " Enter Position Between 1 to 9 : " position 
-	if [[ $position -ge 1 && $position -le 9 ]]
-	then
-		emptyCell $position
-	else
-		echo "Invalid Position"
-		playUser
-	fi
+	flag=0
+	winnerCheckCells $computer
+	[ $flag == 0 ] && emptyCell $((RANDOM%9)) $computer
 }
 
 #function for checking is already filled or empty
@@ -104,27 +95,47 @@ function  emptyCell(){
 }
 #function for checking diagonal, row and column
 function winnerCheckCells(){
+	[ ${FUNCNAME[1]} == "playerTurn" ] && call=checkWinner || call=checkForComputer; sign=$1;
 	column=0
 	for ((row=0;row<7;row+=3))
 	do
-		checkWinner ${boardGame[$row]} ${boardGame[$((row+1))]} ${boardGame[$((row+2))]}
-		checkWinner ${boardGame[$column]} ${boardGame[$((column+3))]} ${boardGame[$((column+6))]}
+		[ $flag == 0 ] && $call $row $((row+1)) $((row+2))
+		[ $flag == 0 ] && $call $column $((column+3)) $((column+6))
 		(( column++ ))
 	done
-		checkWinner ${boardGame[0]} ${boardGame[4]} ${boardGame[8]}
-		checkWinner ${boardGame[2]} ${boardGame[4]} ${boardGame[6]}
+		[ $flag == 0 ] && $call 0 4 8
+		[ $flag == 0 ] && $call 2 4 6
 }
 
 #function of check winner or not
 function checkWinner(){
 	local win1=$1 win2=$2 win3=$3
-	if [ $win1 == $win2 ] && [ $win2 == $win3 ]
+	if [ ${boardGame[$win1]} == ${boardGame[$win2]} ] && [ ${boardGame[$win2]} == ${boardGame[$win3]} ]
 	then
-		[ $win1 == $player ] &&  winner=player || winner=computer
-		echo "Winner win and have sign $win1 "
+		[ ${boardGame[$win1]} == $player ] &&  winner=player || winner=computer
+		echo "Winner win and have sign ${boardGame[$win1]}"
+		printBoard
 		exit
 	fi
 }
+#function of Checking if computer can win then place on win Position
+function checkForComputer(){
+		local win1=$1 win2=$2 win3=$3
+		for ((i=0;i<3;i++))
+		do
+			if [ ${boardGame[$win1]} == ${boardGame[$win2]} ] && [ ${boardGame[$win1]} == $sign ] && [[ ${boardGame[$win3]} == *[[:digit:]]* ]]
+			then
+				boardGame[$win3]=$computer
+				checkWinner $win1 $win2 $win3
+				flag=1
+				((playerMoves++))
+				break
+			else
+				eval $(echo win1=$win2\;win2=$win3\;win3=$win1)
+			fi 
+		done
+}
+
 # function for played a game till not reached end
 function playTillGameEnd(){
    resetBoard
@@ -132,7 +143,6 @@ function playTillGameEnd(){
    while [ $playerMoves -lt $TOTAL_MOVES ]
    do
       printBoard
-      winnerCheckCells
       switchPlayer
    done
    printBoard
